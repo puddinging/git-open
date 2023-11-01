@@ -106,7 +106,7 @@ func firstLine(output string) string {
 // remote url转换为web url
 func TransferToURL(gitURL string) string {
 	var url string
-	if strings.HasPrefix(gitURL, "https://") {
+	if strings.HasPrefix(gitURL, "https://") || strings.HasPrefix(gitURL, "http://") {
 		url = gitURL[:len(gitURL)-4]
 	}
 	if strings.HasPrefix(gitURL, "git@") {
