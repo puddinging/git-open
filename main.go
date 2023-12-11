@@ -7,9 +7,12 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 )
+
+const BRANCH_PREFIX = "tree"
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
@@ -31,13 +34,20 @@ func openCurrentRepo(cmd *cobra.Command, args []string) {
 	if err != nil {
 		Err("not a git repository")
 	}
+	branch := CurrentBranch()
 	if remote == "" {
-		branch := CurrentBranch()
 		remote = CurrentRemote(branch)
 	}
 	gitURL := RemoteURL(remote)
 	url := TransferToURL(gitURL)
+	url = TransferWithBranch(url, branch)
 	_ = OpenBrowser(url)
+}
+
+// TransferWithBranch 添加分支名
+func TransferWithBranch(url string, branch string) string {
+	url = fmt.Sprintf("%s/%s/%s", url, BRANCH_PREFIX, branch)
+	return url
 }
 
 func GitCommand(args ...string) (string, error) {
@@ -47,34 +57,29 @@ func GitCommand(args ...string) (string, error) {
 	return string(output), err
 }
 
-// 获取当前git项目路径
+// CurrentGitRepo 获取当前git项目路径
 func CurrentGitRepo() (string, error) {
 	output, err := GitCommand("rev-parse", "-q", "--show-toplevel")
 	return output, err
 }
 
-// 获取当前分支，如果不存在则使用master
+// CurrentBranch 获取当前分支，如果不存在则使用master
 func CurrentBranch() string {
-	branch, err := SymbolicRef("HEAD", true)
-	if branch == "" || err != nil {
-		branch = "master"
+	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		fmt.Println("generate branch failed")
 	}
-	return branch
+	outputStr := strings.TrimSuffix(string(output), "\n")
+	branchName := strings.TrimSpace(outputStr)
+	return branchName
 }
 
-func SymbolicRef(ref string, short bool) (string, error) {
-	args := []string{"symbolic-ref"}
-	if short {
-		args = append(args, "--short")
-	}
-	args = append(args, ref)
-	output, err := GitCommand(args...)
-	return firstLine(output), err
-}
-
-// 通过分支获取当前remote，默认为origin
+// CurrentRemote 通过分支获取当前remote，默认为origin
 func CurrentRemote(branch string) string {
 	remote, err := GitCommand("config", fmt.Sprintf("branch.%s.remote", branch))
+	fmt.Printf("the URL is %s \n", remote)
+
 	remote = firstLine(remote)
 	if remote == "" || err != nil {
 		remote = "origin"
@@ -82,7 +87,7 @@ func CurrentRemote(branch string) string {
 	return remote
 }
 
-// 通过remote获取remote-url，如果使用错误的remote，则报错退出
+// RemoteURL 通过remote获取remote-url，如果使用错误的remote，则报错退出
 func RemoteURL(remote string) string {
 	gitURL, err := GitCommand("ls-remote", "--get-url", remote)
 	if err != nil {
@@ -103,27 +108,35 @@ func firstLine(output string) string {
 	return output
 }
 
-// remote url转换为web url
+// TransferToURL remote url转换为web url
 func TransferToURL(gitURL string) string {
 	var url string
 	if strings.HasPrefix(gitURL, "https://") || strings.HasPrefix(gitURL, "http://") {
 		url = gitURL[:len(gitURL)-4]
 	}
+	//处理一下  https://oauth2:4be21afa355573d342c17a4517537bde7c4c8c8d78dc018df89bd6a73700f5ee@git.dfy.definesys.cn/apaas/xdap-app.git 格式的URL
 	if strings.HasPrefix(gitURL, "git@") {
 		url = gitURL[:len(gitURL)-4]
 		url = strings.Replace(url, ":", "/", 1)
 		url = strings.Replace(url, "git@", "https://", 1)
 	}
+
+	re := regexp.MustCompile(`https://.*@`)
+	match := re.FindString(url)
+	if match != "" {
+		// 将匹配到的部分替换为https://
+		url = strings.Replace(url, match, "https://", 1)
+	}
 	return url
 }
 
-// 输出报错，结束程序
+// Err 输出报错，结束程序
 func Err(msg ...interface{}) {
 	fmt.Println(msg...)
 	os.Exit(1)
 }
 
-// 唤起浏览器，打开url
+// OpenBrowser 唤起浏览器，打开url
 func OpenBrowser(url string) error {
 	launcher, err := browserLauncher()
 	if err != nil {
