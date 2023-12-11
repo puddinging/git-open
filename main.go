@@ -78,8 +78,6 @@ func CurrentBranch() string {
 // CurrentRemote 通过分支获取当前remote，默认为origin
 func CurrentRemote(branch string) string {
 	remote, err := GitCommand("config", fmt.Sprintf("branch.%s.remote", branch))
-	fmt.Printf("the URL is %s \n", remote)
-
 	remote = firstLine(remote)
 	if remote == "" || err != nil {
 		remote = "origin"
