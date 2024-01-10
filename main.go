@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -171,7 +170,7 @@ func searchBrowserLauncher() (browser string) {
 		browser = "powershell.exe Start-Process"
 		return browser
 	}
-	
+
 	switch runtime.GOOS {
 	case "darwin":
 		browser = "open"
