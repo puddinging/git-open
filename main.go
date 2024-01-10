@@ -1,15 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
-	"github.com/kballard/go-shellquote"
-	"github.com/spf13/cobra"
+	"log"
 	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/kballard/go-shellquote"
+	"github.com/spf13/cobra"
 )
 
 const BRANCH_PREFIX = "tree"
@@ -141,7 +144,7 @@ func OpenBrowser(url string) error {
 		return err
 	}
 	args := append(launcher, url)
-	//fmt.Printf("使用浏览器：%s， 打开链接：%s", launcher, url)
+	fmt.Printf("使用浏览器：%s， 打开链接：%s", launcher, url)
 	cmd := exec.Command(args[0], args[1:]...)
 	return cmd.Run()
 }
@@ -163,15 +166,39 @@ func browserLauncher() ([]string, error) {
 
 // 根据操作系统，返回默认browser command
 func searchBrowserLauncher() (browser string) {
+	// 单独处理一下wsl的情况
+	if isWSL() {
+		browser = "powershell.exe Start-Process"
+		return browser
+	}
+	
 	switch runtime.GOOS {
 	case "darwin":
 		browser = "open"
 	case "windows":
-		browser = "cmd /c start"
+		browser = "powershell.exe Start-Process"
 	case "linux":
 		browser = "xdg-open"
 	default:
 		browser = ""
 	}
 	return browser
+}
+
+func isWSL() bool {
+	file, err := os.Open("/proc/version")
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.Contains(line, "Microsoft") || strings.Contains(line, "WSL") {
+			return true
+		}
+	}
+
+	return false
 }
