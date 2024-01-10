@@ -143,7 +143,7 @@ func OpenBrowser(url string) error {
 		return err
 	}
 	args := append(launcher, url)
-	fmt.Printf("使用浏览器：%s， 打开链接：%s", launcher, url)
+	// fmt.Printf("使用浏览器：%s， 打开链接：%s", launcher, url)
 	cmd := exec.Command(args[0], args[1:]...)
 	return cmd.Run()
 }
