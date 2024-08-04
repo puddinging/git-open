@@ -14,7 +14,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const BRANCH_PREFIX = "tree"
+const DEFAULT_BRANCH_PREFIX = "tree"
+const GITEA_BRANCH_PREFIX = "src/branch"
+const GITEA_DOMAIN = "gitea.com"
 
 func main() {
 	if err := rootCmd.Execute(); err != nil {
@@ -48,7 +50,11 @@ func openCurrentRepo(cmd *cobra.Command, args []string) {
 
 // TransferWithBranch 添加分支名
 func TransferWithBranch(url string, branch string) string {
-	url = fmt.Sprintf("%s/%s/%s", url, BRANCH_PREFIX, branch)
+	if strings.Contains(url, GITEA_DOMAIN) {
+		url = fmt.Sprintf("%s/%s/%s", url, GITEA_BRANCH_PREFIX, branch)
+	} else {
+		url = fmt.Sprintf("%s/%s/%s", url, DEFAULT_BRANCH_PREFIX, branch)
+	}
 	return url
 }
 
