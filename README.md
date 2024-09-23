@@ -28,9 +28,19 @@
    ```
 
 3. 将编译后的二进制文件移动到 PATH 中的目录：
-   ```
-   sudo mv git-open /usr/local/bin/
-   ```
+
+   - macOS 和 Linux:
+     ```
+     sudo mv git-open /usr/local/bin/
+     ```
+
+   - Windows:
+     将 `git-open.exe` 移动到 `C:\Windows\System32\` 或其他在 PATH 中的目录
+
+   - WSL:
+     ```
+     sudo mv git-open /usr/local/bin/
+     ```
 
 ## 使用方法
 
@@ -40,6 +50,16 @@
    ```
    git open
    ```
+
 注意：确保您在 Git 仓库目录中运行这些命令，否则可能会出现错误。
 
 如果您的远程仓库 URL 使用 SSH 协议（如 `git@github.com:user/repo.git`），`git-open` 会自动将其转换为 HTTPS URL 以在浏览器中打开。
+
+### 平台特定说明
+
+- macOS: 默认使用 `open` 命令打开默认浏览器
+- Windows: 使用 `powershell.exe Start-Process` 命令打开默认浏览器
+- Linux: 使用 `xdg-open` 命令打开默认浏览器
+- WSL: 使用 `powershell.exe Start-Process` 命令在 Windows 主机上打开默认浏览器
+
+如果您的系统环境变量中设置了 `BROWSER`，`git-open` 将优先使用该设置打开浏览器。
